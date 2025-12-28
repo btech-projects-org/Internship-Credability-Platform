@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Verify internship credibility and avoid scams">
+  <title>Internship Credibility Checker - Home</title>
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <!-- Video Background -->
+  <div class="video-wrapper">
+    <!-- playsinline ensures inline playback on iOS Safari; Firefox safely ignores -->
+    <video autoplay muted loop playsinline preload="auto">
+      <source src="../assets/assets/video/background.mp4" type="video/mp4">
+    </video>
+    <div class="video-overlay"></div>
+  </div>
+
+  <!-- Page Content -->
+  <div class="page-content">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="index.html" class="nav-brand">🎓 Internship Checker</a>
+        <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link active">Home</a></li>
+          <li><a href="check.html" class="nav-link">Check Internship</a></li>
+          <li><a href="workflow.html" class="nav-link">How It Works</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li><a href="resume-templates.html" class="nav-link">ATS Templates</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content fade-in">
+        <h1>Verify Your Internship Opportunity</h1>
+        <p>Protect yourself from fraudulent internship offers. Analyze credibility in seconds.</p>
+        <a href="check.html" class="btn btn-primary btn-large pulse">Start Checking Now</a>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title fade-in-up">Why Use Our Checker?</h2>
+        <div class="grid grid-3">
+          <div class="card card-dark hover-lift fade-in-up delay-1">
+              <div class="fs-3xl text-center">🔍</div>
+            <h3 class="text-center">Comprehensive Analysis</h3>
+            <p>Our algorithm analyzes multiple factors including company verification, offer details, communication patterns, and requirements.</p>
+          </div>
+          <div class="card card-dark hover-lift fade-in-up delay-2">
+              <div class="fs-3xl text-center">⚡</div>
+            <h3 class="text-center">Instant Results</h3>
+            <p>Get your credibility score and detailed recommendations within seconds. No waiting, no complexity.</p>
+          </div>
+          <div class="card card-dark hover-lift fade-in-up delay-3">
+              <div class="fs-3xl text-center">🔒</div>
+            <h3 class="text-center">Private & Secure</h3>
+            <p>All analysis happens in your browser. Your data never leaves your device.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="section">
+      <div class="container">
+        <div class="grid grid-3">
+          <div class="card text-center scale-in delay-1">
+            <h3 class="stats-number">98%</h3>
+            <p class="fs-lg fw-600">Accuracy Rate</p>
+          </div>
+          <div class="card text-center scale-in delay-2">
+            <h3 class="stats-number">10K+</h3>
+            <p class="fs-lg fw-600">Checks Performed</p>
+          </div>
+          <div class="card text-center scale-in delay-3">
+            <h3 class="stats-number">5K+</h3>
+            <p class="fs-lg fw-600">Scams Prevented</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section">
+      <div class="container text-center">
+        <div class="card card-dark fade-in">
+          <h2>Ready to Verify Your Internship?</h2>
+          <p class="fs-lg mb-2">Take control of your career. Don't fall victim to internship scams.</p>
+          <a href="check.html" class="btn btn-primary btn-large">Get Started</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Internship Checker</h3>
+          <p>Empowering students to make informed decisions about internship opportunities.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="check.html">Check Internship</a></li>
+            <li><a href="workflow.html">How It Works</a></li>
+            <li><a href="about.html">About Us</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Internship Credibility Checker. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Alert Container -->
+  <div id="alert-container"></div>
+
+  <!-- JavaScript Files -->
+  <script src="../js/core/validation.js"></script>
+  <script src="../js/core/storage.js"></script>
+  <script src="../js/core/ui.js"></script>
+  <script src="../js/core/navigation.js"></script>
+  <script src="../js/utils/button-state.js"></script>
+</body>
+</html>

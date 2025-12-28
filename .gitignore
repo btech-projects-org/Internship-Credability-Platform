@@ -1,0 +1,76 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+backend/config/secrets.env
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Datasets (NO LOCAL DATASETS ALLOWED)
+*.csv
+*.json
+*.parquet
+data/
+datasets/local/
+
+# Models (trained models can be large)
+backend/models/saved/
+*.pkl
+*.h5
+*.pt
+*.pth
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs
+*.log
+logs/
+
+# Temp files
+temp/
+tmp/
+temp_kaggle/
+
+# Node (if any)
+node_modules/
+package-lock.json
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/
