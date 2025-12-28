@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env
+
+# Data & Models
+*.pkl
+*.h5
+*.pth
+datasets/data/
+models/checkpoints/
+
+# Documentation
+documentation/
+
+# Tests
+tests/
+test_*.py
+*_test.py
+
+# Development
+backend/scripts/
+backend/__pycache__/
