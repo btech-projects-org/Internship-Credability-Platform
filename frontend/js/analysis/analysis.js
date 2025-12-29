@@ -5,11 +5,13 @@
 const Analysis = {
   // Analyze internship credibility
   analyzeInternship(data) {
+    const safeData = (data && typeof data === 'object') ? data : {};
+
     const scores = {
-      companyScore: this.calculateCompanyScore(data),
-      offerScore: this.calculateOfferScore(data),
-      communicationScore: this.calculateCommunicationScore(data),
-      requirementsScore: this.calculateRequirementsScore(data)
+      companyScore: this.calculateCompanyScore(safeData),
+      offerScore: this.calculateOfferScore(safeData),
+      communicationScore: this.calculateCommunicationScore(safeData),
+      requirementsScore: this.calculateRequirementsScore(safeData)
     };
 
     const totalScore = (
@@ -35,10 +37,13 @@ const Analysis = {
 
   // Calculate company credibility score
   calculateCompanyScore(data) {
+    const hasValidation = (typeof Validation !== 'undefined');
+    const isValidUrl = (url) => hasValidation ? Validation.isValidURL(url) : true;
+
     let score = 0;
 
     // Company website exists and is valid
-    if (data.companyWebsite && Validation.isValidURL(data.companyWebsite)) {
+    if (data.companyWebsite && isValidUrl(data.companyWebsite)) {
       score += 25;
     }
 
@@ -63,7 +68,17 @@ const Analysis = {
 
   // Calculate offer details score
   calculateOfferScore(data) {
-    let score = 50; // Base score
+    const hasInputs = [
+      data.requiresPayment,
+      data.noJobDescription,
+      data.unrealisticSalary,
+      data.immediateStart,
+      data.noContract
+    ].some(Boolean);
+
+    if (!hasInputs) return 0; // No info provided → no credit
+
+    let score = 50; // Base score once we have signals
 
     // Red flags reduce score
     if (data.requiresPayment) score -= 30;
@@ -77,7 +92,18 @@ const Analysis = {
 
   // Calculate communication score
   calculateCommunicationScore(data) {
-    let score = 50; // Base score
+    const hasInputs = [
+      data.professionalEmail,
+      data.detailedJobDescription,
+      data.clearTimeline,
+      data.pressureToDecide,
+      data.vagueResponses,
+      data.multipleFollowups
+    ].some(Boolean);
+
+    if (!hasInputs) return 0; // No info provided → no credit
+
+    let score = 50; // Base score once we have signals
 
     // Professional communication adds points
     if (data.professionalEmail) score += 20;
@@ -94,7 +120,18 @@ const Analysis = {
 
   // Calculate requirements score
   calculateRequirementsScore(data) {
-    let score = 50; // Base score
+    const hasInputs = [
+      data.reasonableSkills,
+      data.clearExpectations,
+      data.mentionedTraining,
+      data.requestsPersonalInfo,
+      data.requestsBankDetails,
+      data.unusualRequirements
+    ].some(Boolean);
+
+    if (!hasInputs) return 0; // No info provided → no credit
+
+    let score = 50; // Base score once we have signals
 
     // Reasonable requirements add points
     if (data.reasonableSkills) score += 20;

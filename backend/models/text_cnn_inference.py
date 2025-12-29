@@ -3,11 +3,18 @@
 # ========================
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 import pickle
 import os
+
+# TensorFlow is optional (may not be available in PyInstaller bundle)
+try:
+    import tensorflow as tf
+    from tensorflow.keras.models import load_model
+    from tensorflow.keras.preprocessing.sequence import pad_sequences
+    HAS_TENSORFLOW = True
+except ImportError:
+    HAS_TENSORFLOW = False
+    print("⚠ TensorFlow not available; Text CNN will use fallback predictions")
 
 class TextCNNPredictor:
     """
@@ -25,6 +32,11 @@ class TextCNNPredictor:
     
     def _load_model(self):
         """Load pre-trained CNN model"""
+        if not HAS_TENSORFLOW:
+            print("⚠ Skipping CNN model load (TensorFlow unavailable)")
+            self.model = None
+            return
+            
         if os.path.exists(self.model_path):
             try:
                 self.model = load_model(self.model_path)
@@ -52,6 +64,9 @@ class TextCNNPredictor:
             float: Credibility score (0-1)
         """
         if self.model is None or self.tokenizer is None:
+            return 0.5  # Fallback: neutral score if model unavailable
+        
+        if not HAS_TENSORFLOW:
             return 0.5
         
         try:

@@ -4,11 +4,7 @@
 
 from flask import Flask
 from flask_cors import CORS
-from dotenv import load_dotenv
 import os
-
-# Load environment variables
-load_dotenv('config/secrets.env')
 
 # Initialize Flask app
 app = Flask(__name__)

@@ -1,0 +1,253 @@
+STRICT DEPENDENCY VALIDATION - QUICK REFERENCE
+===============================================
+
+WHAT IS THIS?
+─────────────
+An automated system that:
+  1. Checks Python is installed
+  2. Installs ALL dependencies sequentially (one at a time)
+  3. Verifies each installation
+  4. BLOCKS backend startup if ANY check fails
+  5. Shows exactly which package failed (if it does)
+
+
+HOW TO USE
+──────────
+
+OPTION 1: Windows (Easiest)
+  1. Double-click: RUN.bat
+  2. Wait for setup (2-10 minutes first time)
+  3. Browser opens automatically
+
+OPTION 2: Command Line
+  1. Open PowerShell
+  2. Run: python setup_and_run.py
+  3. App starts after validation
+
+OPTION 3: Direct Validation (Advanced)
+  1. python dependency_validator.py  (validates + installs)
+  2. python launcher.py               (starts Flask backend)
+
+
+WHAT HAPPENS
+────────────
+
+Successful Run:
+  [STEP 1] Checking Python availability...
+    ✓ Python is available and accessible
+
+  [STEP 2] Locating requirements.txt...
+    Found: backend/requirements.txt
+
+  [STEP 3] Parsing requirements.txt...
+    Found 45 packages to install
+
+  [STEP 4] Installing dependencies (sequential)...
+    [1/45] Installing: Flask==3.0.0
+           ✓ OK
+    [2/45] Installing: flask-cors==4.0.0
+           ✓ OK
+    [3/45] Installing: numpy==1.26.2
+           ✓ OK
+    ... (continues for all 45)
+
+  [STEP 5] Verifying installation...
+    ✓ Flask
+    ✓ flask-cors
+    ✓ numpy
+    ... (import test for all)
+
+  ✓ ALL CHECKS PASSED
+  ✓ Backend is ready to start
+
+
+Failed Run (Example):
+  [STEP 1] Checking Python availability...
+    ✓ Python is available
+
+  [STEP 4] Installing dependencies...
+    [1/45] Installing: Flask==3.0.0
+           ✓ OK
+    [2/45] Installing: some-bad-package==1.0.0
+           ✗ FAILED
+
+  ✗ INSTALLATION FAILURE: some-bad-package
+    Package Spec: some-bad-package==1.0.0
+    Exit Code: 1
+    Error: No matching distribution found
+
+  ✗ FATAL ERROR: Installation of 'some-bad-package' failed
+  Solution: Fix the issue and try again
+
+  ⚠️  BACKEND WILL NOT START
+
+
+KEY GUARANTEES
+──────────────
+
+✓ Python check is MANDATORY
+  └─ If not found: Backend does NOT start
+
+✓ ALL dependencies must install successfully
+  └─ If ANY fails: Backend does NOT start
+
+✓ Installation is SEQUENTIAL
+  └─ One package at a time, not batched
+  └─ Shows exact failure point
+
+✓ Explicit error messages
+  └─ Package name shown
+  └─ Reason shown
+  └─ Solution suggested
+
+✓ No partial execution
+  └─ All-or-nothing approach
+  └─ Backend starts ONLY if 100% ready
+
+
+FILES INVOLVED
+──────────────
+
+RUN.bat
+  └─ Windows batch wrapper
+  └─ User double-clicks this
+  └─ Checks Python + runs setup_and_run.py
+
+setup_and_run.py
+  └─ Main entry point (Python)
+  └─ Runs validator
+  └─ Starts launcher if validator succeeds
+
+dependency_validator.py
+  └─ Core validation logic
+  └─ All the checks happen here
+  └─ Sequential package installation
+  └─ Import verification
+
+launcher.py
+  └─ Flask backend
+  └─ Only runs if validator returns exit(0)
+
+
+TROUBLESHOOTING
+───────────────
+
+"Python not found"
+  → Install Python 3.12+ from python.org
+  → Add to PATH
+  → Run again
+
+"requirements.txt not found"
+  → File should be in project root or backend/
+  → Check file exists
+  → Check spelling
+
+"Package X failed to install"
+  → Check internet connection
+  → Check disk space (need ~2-3 GB)
+  → Check package name spelling
+  → Run: pip install [package-name] manually for more details
+
+"Backend won't start"
+  → Check validator output for errors
+  → Fix reported issue
+  → Run again
+
+
+SEQUENTIAL VS BATCH INSTALLATION
+─────────────────────────────────
+
+Batch (What NOT to do):
+  pip install package1 package2 package3 package4 ...
+  └─ If package3 fails, unclear which one caused issue
+  └─ Other packages might not be attempted
+  └─ Hard to debug
+
+Sequential (What THIS system does):
+  pip install package1
+  └─ Wait for completion, check exit code
+  pip install package2
+  └─ Wait for completion, check exit code
+  pip install package3
+  └─ If fails: STOP HERE, report this exact package
+  └─ NEVER start backend
+  └─ Clear accountability
+
+
+PERFORMANCE
+───────────
+
+First run:     5-10 minutes (installs all packages)
+Subsequent:    2-3 seconds (skips already installed)
+
+For reference, timings:
+  - PyTorch:    2-4 minutes (largest package)
+  - Other ML:   1-2 minutes
+  - Utility:    10-30 seconds each
+
+
+GUARANTEED BEHAVIOR
+───────────────────
+
+Scenario 1: Python not installed
+  Input:  python setup_and_run.py
+  Output: "Python not found" error
+  Result: Backend does NOT start
+
+Scenario 2: All deps installed correctly
+  Input:  python setup_and_run.py
+  Output: All checks pass, backend starts
+  Result: Browser opens automatically
+
+Scenario 3: Dependency X fails
+  Input:  python setup_and_run.py
+  Output: Stops at dependency X, clear error
+  Result: Backend does NOT start
+
+Scenario 4: Import test fails (dependency installed but broken)
+  Input:  python setup_and_run.py
+  Output: Stops at verification, shows import error
+  Result: Backend does NOT start
+
+
+SUCCESS CRITERIA
+────────────────
+
+✓ User runs ONE file (RUN.bat or python setup_and_run.py)
+✓ Python availability is checked
+✓ ALL dependencies are installed (sequential, no skipping)
+✓ Installation is verified (import tests)
+✓ Backend starts ONLY if 100% valid
+✓ Clear error messages on failure
+✓ Non-zero exit codes prevent backend startup
+✓ No manual pip steps required
+✓ No hidden assumptions
+
+
+FOR DEVELOPERS
+──────────────
+
+Test the validator:
+  python dependency_validator.py
+
+Test the full flow:
+  python setup_and_run.py
+
+Direct Flask (for development):
+  cd backend
+  python app.py
+
+
+FOR USERS
+─────────
+
+Just run:
+  Double-click RUN.bat
+
+That's it. No pip, no environment setup, no manual steps.
+
+
+═══════════════════════════════════════════════════════════════
+
+This system provides 100% automated, fail-safe dependency validation.
+Download → Run RUN.bat → Backend starts (if all checks pass)

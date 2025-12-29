@@ -8,6 +8,8 @@ from services.company_verifier import CompanyVerifier
 from models.random_forest_inference import RandomForestPredictor
 from preprocessing.text_cleaner import TextCleaner
 
+from typing import Dict, Any, Optional
+
 class CredibilityEngine:
     """
     Purpose: Final credibility fusion
@@ -33,32 +35,108 @@ class CredibilityEngine:
             dict: Credibility score and breakdown
         """
         try:
-            scores = {}
-            
             # Check for parsed internship data from new simplified form
             has_parsed_data = 'parsed' in data
             parsed = data.get('parsed', {})
             
-            # Get company name for verification
+            # Get all critical fields
             company_name = data.get('companyName') or parsed.get('companyName')
+            contact_email = data.get('contactEmail') or parsed.get('contactEmail')
+            job_desc = data.get('jobDescription') or parsed.get('jobDescription')
+            position = data.get('position') or parsed.get('position')
+            salary = data.get('salary') or parsed.get('salary')
+            duration = data.get('duration') or parsed.get('duration')
             website = data.get('companyWebsite') or parsed.get('companyWebsite')
             
-            # 0. Company verification (NEW - searches online)
-            if company_name:
-                try:
-                    company_verification = self.company_verifier.verify_company(company_name, website)
-                    scores['company_verification_score'] = company_verification.get('safety_score', 0.5)
-                    
-                    # Store verification details for recommendations
-                    verification_warnings = company_verification.get('warnings', [])
-                    verification_positive = company_verification.get('positive_indicators', [])
-                except Exception as e:
-                    scores['company_verification_score'] = 0.5
-                    verification_warnings = []
-                    verification_positive = []
-            else:
-                scores['company_verification_score'] = 0.5
-                verification_warnings = []
+            # INTELLIGENT VALIDATION: Allow analysis even if some optional fields are missing
+            missing_critical_fields = []
+            
+            # CRITICAL: Company name (must have something meaningful)
+            company_valid = (company_name and str(company_name).strip() and 
+                           str(company_name).strip().lower() not in ['unknown company', 'unknown', 'n/a'])
+            if not company_valid:
+                missing_critical_fields.append('Company Name')
+            
+            # CRITICAL: Job description (at least 20 characters for meaningful analysis)
+            job_desc_valid = (job_desc and str(job_desc).strip() and 
+                            len(str(job_desc).strip()) >= 20)
+            if not job_desc_valid:
+                missing_critical_fields.append('Job Description')
+            
+            # Return 0% if company is "Unknown Company" OR if BOTH company and job desc are missing
+            # This prevents analyzing scams with invalid company names
+            if (str(company_name).strip().lower() == 'unknown company' or 
+                len(missing_critical_fields) >= 2):
+                return {
+                    'credibility_score': 0.0,
+                    'credibility_level': 'VERY_LOW',
+                    'breakdown': {
+                        'company_verification_score': 0.0,
+                        'url_score': 0.0,
+                        'email_match_score': 0.0,
+                        'sentiment_score': 0.0,
+                        'verification_score': 0.0,
+                        'red_flag_penalty': 1.0
+                    },
+                    'red_flags': {
+                        'incomplete_submission': f'Missing critical information: {", ".join(missing_critical_fields)}'
+                    },
+                    'company_verification': {
+                        'warnings': [f'Cannot assess without: {", ".join(missing_critical_fields)}'],
+                        'positive_indicators': []
+                    },
+                    'recommendations': [
+                        '❌ INCOMPLETE SUBMISSION - Score: 0%',
+                        'The following CRITICAL fields are REQUIRED:',
+                        '✗ Company Name',
+                        '✗ Job Description',
+                        '',
+                    ]
+                }
+            
+            # Track other missing fields for warnings but allow analysis to continue
+            missing_fields = []
+            
+            # Email is important but if it's missing, we can infer contact@company.com
+            if not contact_email or not str(contact_email).strip() or '@' not in str(contact_email):
+                # Try to generate email from company name
+                if company_name and company_name.lower() != 'unknown company':
+                    company_slug = str(company_name).lower().replace(' ', '').replace('-', '')
+                    contact_email = f'contact@{company_slug}.com'
+                else:
+                    missing_fields.append('Contact Email')
+            
+            # Position - if missing, we have job description so we can infer
+            if not position or not str(position).strip() or len(str(position).strip()) < 3:
+                # Try to infer from job description if available
+                if job_desc and len(str(job_desc).strip()) > 30:
+                    position = 'Internship Position'  # Placeholder
+                else:
+                    missing_fields.append('Position/Role')
+            
+            # Salary - nice to have but not critical
+            if not salary or not str(salary).strip():
+                salary = 'Not specified'
+            
+            # Duration - nice to have but not critical
+            if not duration or not str(duration).strip():
+                duration = 'Not specified'
+            
+            # Continue with analysis using filled-in values
+            # (No more early 0% returns - we have enough data to analyze)
+            
+            # All fields present - proceed with full analysis
+            scores = {}
+            
+            # 0. Company verification
+            try:
+                company_verification = self.company_verifier.verify_company(company_name, website)
+                scores['company_verification_score'] = company_verification.get('safety_score', 0.0)
+                verification_warnings = company_verification.get('warnings', [])
+                verification_positive = company_verification.get('positive_indicators', [])
+            except Exception:
+                scores['company_verification_score'] = 0.0
+                verification_warnings = ['Company verification unavailable']
                 verification_positive = []
             
             # 1. URL-based features
@@ -66,34 +144,30 @@ class CredibilityEngine:
                 url_features = self.url_extractor.extract(website)
                 scores['url_score'] = self._score_url_features(url_features)
             else:
-                scores['url_score'] = 0.6  # Reduced penalty - website might not always be available
+                scores['url_score'] = 0.0  # No website provided
             
             # 2. Email domain match
-            email = data.get('contactEmail') or parsed.get('contactEmail')
-            if email and website:
-                scores['email_match_score'] = self._score_email_match(email, website)
+            if contact_email and website:
+                scores['email_match_score'] = self._score_email_match(contact_email, website)
             else:
-                scores['email_match_score'] = 0.6  # Reduced penalty
+                scores['email_match_score'] = 0.0  # Cannot match without both
             
             # 3. Sentiment analysis of job description
-            job_desc = data.get('jobDescription') or parsed.get('jobDescription')
             if job_desc:
                 cleaned_text = self.text_cleaner.clean(job_desc)
                 sentiment = self.sentiment_analyzer.analyze(cleaned_text)
                 scores['sentiment_score'] = self._score_sentiment(sentiment)
             else:
-                scores['sentiment_score'] = 0.7  # Neutral/positive for missing data
+                scores['sentiment_score'] = 0.0  # Required field missing
             
-            # 4. Company verification - score based on parsed data quality
+            # 4. Verification score based on data quality
             verification_score = 0.0
             if has_parsed_data:
-                # Score based on how much data was successfully parsed
                 if parsed.get('companyName'): verification_score += 0.25
                 if parsed.get('position'): verification_score += 0.25
                 if parsed.get('salary'): verification_score += 0.25
                 if parsed.get('duration'): verification_score += 0.25
             else:
-                # Old checkbox system
                 if data.get('hasLinkedIn'): verification_score += 0.3
                 if data.get('hasGlassdoor'): verification_score += 0.3
                 if data.get('isRegistered'): verification_score += 0.4
@@ -102,18 +176,23 @@ class CredibilityEngine:
             
             # 5. Red flag detection
             red_flags = self._detect_red_flags(data, parsed)
-            red_flag_penalty = min(len(red_flags) * 0.25, 1.0)  # INCREASED per-flag penalty from 0.15 to 0.25
+            red_flag_penalty = min(len(red_flags) * 0.25, 1.0)
             scores['red_flag_penalty'] = red_flag_penalty
             
-            # Calculate final weighted score (NEW WEIGHTS including company verification)
-            final_score = (
-                scores['company_verification_score'] * 0.25 +  # Company verification
+            # Calculate final weighted score
+            positive_weight = (
+                scores['company_verification_score'] * 0.25 +
                 scores['url_score'] * 0.08 +
                 scores['email_match_score'] * 0.07 +
                 scores['sentiment_score'] * 0.05 +
-                scores['verification_score'] * 0.20 +
-                (1 - red_flag_penalty) * 0.35  # INCREASED: Red flags are critical
+                scores['verification_score'] * 0.20
             )
+            # If there are no meaningful positive signals, return 0
+            if positive_weight <= 0.0:
+                final_score = 0.0
+            else:
+                # Apply red-flag penalty as a multiplier (never add baseline)
+                final_score = positive_weight * (1 - red_flag_penalty)
             
             # Ensure score is between 0 and 1
             final_score = max(0.0, min(1.0, final_score))
@@ -143,9 +222,9 @@ class CredibilityEngine:
     def _score_url_features(self, features: dict) -> float:
         """Score URL features (0-1)"""
         if 'error' in features:
-            return 0.3
+            return 0.0
         
-        score = 0.5  # Base score
+        score = 0.0  # Start from zero; no URL means zero credit
         
         if features.get('has_https'): score += 0.2
         if not features.get('has_ip_address'): score += 0.1
@@ -164,19 +243,19 @@ class CredibilityEngine:
             
             if email_domain in url_domain or url_domain in email_domain:
                 return 1.0
-            return 0.3
+            return 0.0
         except:
-            return 0.5
+            return 0.0
     
     def _score_sentiment(self, sentiment: dict) -> float:
         """Convert sentiment to score"""
         if sentiment['label'] == 'POSITIVE':
             return 0.5 + (sentiment['score'] * 0.5)
         elif sentiment['label'] == 'NEGATIVE':
-            return 0.5 - (sentiment['score'] * 0.5)
-        return 0.5
+            return max(0.0, 0.5 - (sentiment['score'] * 0.5))
+        return 0.0  # Neutral/unknown contributes no credit
     
-    def _detect_red_flags(self, data: dict, parsed: dict = None) -> dict:
+    def _detect_red_flags(self, data: dict, parsed: Optional[dict] = None) -> dict:
         """Detect red flags in internship offer"""
         flags = {}
         parsed = parsed or {}
@@ -220,7 +299,7 @@ class CredibilityEngine:
         if score >= 0.4: return 'LOW'
         return 'VERY_LOW'
     
-    def _generate_recommendations(self, score: float, red_flags: list, verification_warnings: list = None) -> list:
+    def _generate_recommendations(self, score: float, red_flags: dict, verification_warnings: Optional[list] = None) -> list:
         """Generate actionable recommendations"""
         recommendations = []
         verification_warnings = verification_warnings or []
@@ -236,10 +315,12 @@ class CredibilityEngine:
         if red_flags:
             recommendations.append('⚠️ Critical: Address all red flags before proceeding')
         
-        if 'Requires payment' in red_flags:
+        red_flag_values = list(red_flags.values()) if isinstance(red_flags, dict) else red_flags
+        
+        if any('payment' in str(flag).lower() for flag in red_flag_values):
             recommendations.append('NEVER pay for internship opportunities')
         
-        if 'No written contract' in red_flags:
+        if any('contract' in str(flag).lower() for flag in red_flag_values):
             recommendations.append('Request formal written contract before starting')
         
         return recommendations

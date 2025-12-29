@@ -23,6 +23,13 @@ wheels/
 .installed.cfg
 *.egg
 
+# PyInstaller artifacts
+CredibilityCheck.spec
+build/
+dist/
+*.exe
+*.manifest
+
 # Environment variables
 backend/config/secrets.env
 .env

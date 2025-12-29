@@ -7,16 +7,19 @@ from services.credibility_engine import CredibilityEngine
 from services.url_feature_extractor import URLFeatureExtractor
 from services.info_parser import InternshipInfoParser
 from services.company_verifier import CompanyVerifier
+from services.company_search import CompanySearcher
+import re
 
 credibility_bp = Blueprint('credibility', __name__)
 engine = None
 url_extractor = None
 info_parser = None
 company_verifier = None
+company_searcher = None
 
 def _ensure_initialized():
     """Lazy initialize services on first request"""
-    global engine, url_extractor, info_parser, company_verifier
+    global engine, url_extractor, info_parser, company_verifier, company_searcher
     if engine is None:
         engine = CredibilityEngine()
     if url_extractor is None:
@@ -25,6 +28,37 @@ def _ensure_initialized():
         info_parser = InternshipInfoParser()
     if company_verifier is None:
         company_verifier = CompanyVerifier()
+    if company_searcher is None:
+        company_searcher = CompanySearcher()
+
+
+@credibility_bp.route('/find_company_website', methods=['POST'])
+def find_company_website():
+    """
+    Endpoint: /api/find_company_website
+    Purpose: Find likely official website for a company using Google CSE
+    Input: companyName (required)
+    Output: best-guess website URL
+    """
+    _ensure_initialized()
+    try:
+        data = request.get_json()
+        if not data or 'companyName' not in data:
+            return jsonify({'error': 'Missing companyName field'}), 400
+
+        company_name = data['companyName']
+        if not company_name or not str(company_name).strip():
+            return jsonify({'error': 'Company name cannot be empty'}), 400
+
+        website = company_searcher.search_company(company_name)
+
+        if not website:
+            return jsonify({'success': False, 'message': 'No website found'}), 200
+
+        return jsonify({'success': True, 'website': website}), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Failed to find company website: {str(e)}'}), 500
 
 @credibility_bp.route('/parse_internship_info', methods=['POST'])
 def parse_internship_info():
@@ -38,12 +72,17 @@ def parse_internship_info():
     try:
         data = request.get_json()
         
-        # Validate input
-        if 'rawInternshipInfo' not in data or not data['rawInternshipInfo'].strip():
-            return jsonify({'error': 'Missing or empty rawInternshipInfo field'}), 400
+        # Validate input exists
+        if 'rawInternshipInfo' not in data:
+            return jsonify({'error': 'Missing rawInternshipInfo field'}), 400
         
-        # Parse the raw information
         raw_text = data['rawInternshipInfo']
+        
+        # Allow any non-empty input - parser will extract what it can
+        if not raw_text or not str(raw_text).strip():
+            return jsonify({'error': 'Please provide internship information'}), 400
+        
+        # Parse the raw information (parser returns empty fields if nothing found)
         parsed_data = info_parser.parse(raw_text)
         
         return jsonify({
@@ -67,11 +106,15 @@ def verify_company():
     try:
         data = request.get_json()
         
-        # Validate input
-        if 'companyName' not in data or not data['companyName'].strip():
-            return jsonify({'error': 'Missing or empty companyName field'}), 400
+        # Validate input exists
+        if 'companyName' not in data:
+            return jsonify({'error': 'Missing companyName field'}), 400
         
         company_name = data['companyName']
+        
+        if not company_name or not str(company_name).strip():
+            return jsonify({'error': 'Company name cannot be empty'}), 400
+        
         website = data.get('website', data.get('companyWebsite', None))
         
         # Verify the company
@@ -98,11 +141,8 @@ def predict_credibility():
     try:
         data = request.get_json()
         
-        # Validate required fields
-        required_fields = ['companyName', 'contactEmail']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'Missing required field: {field}'}), 400
+        # Pass data directly to engine for analysis
+        # Engine will return 0% if any critical fields are missing
         
         # Delegate to credibility engine
         result = engine.analyze(data)

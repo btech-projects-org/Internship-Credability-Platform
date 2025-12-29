@@ -138,10 +138,13 @@
               const parseResult = await parseResponse.json();
               parsedData = {
                 ...internshipData,
-                parsed: parseResult.parsed
+                parsed: parseResult.parsed || {}
               };
             } else {
-              console.warn('Parsing failed, using raw data');
+              const errorText = await parseResponse.text();
+              console.warn('Parsing failed:', errorText);
+              // Continue with unparsed data
+              parsedData = internshipData;
             }
           }
 
@@ -176,28 +179,26 @@
             // Convert backend result to frontend format
             const breakdown = predictResult.breakdown || {};
             analysisResults = {
-              credibility_score: predictResult.credibility_score,
-              totalScore: predictResult.credibility_score,
-              credibilityLevel: predictResult.credibility_level,
+              credibility_score: predictResult.credibility_score || 0,
+              totalScore: predictResult.credibility_score || 0,
+              credibilityLevel: predictResult.credibility_level || 'VERY_LOW',
               scores: {
-                companyScore: Math.round((breakdown.company_verification_score || 0.5) * 100),
-                offerScore: Math.round((breakdown.url_score || 0.5) * 100),
-                communicationScore: Math.round((breakdown.sentiment_score || 0.5) * 100),
-                requirementsScore: Math.round((breakdown.verification_score || 0.5) * 100)
+                companyScore: Math.round((breakdown.company_verification_score || 0) * 100),
+                offerScore: Math.round((breakdown.url_score || 0) * 100),
+                communicationScore: Math.round((breakdown.sentiment_score || 0) * 100),
+                requirementsScore: Math.round((breakdown.verification_score || 0) * 100)
               },
               breakdown: breakdown,
-              red_flags: predictResult.red_flags || [],
+              red_flags: predictResult.red_flags || {},
               recommendations: predictResult.recommendations || [],
               warnings: predictResult.warnings || [],
               parsed: parsedData.parsed,
               timestamp: new Date().toISOString()
             };
           } else {
-            console.error('Prediction failed:', await predictResponse.text());
-            // Fallback to local analysis
-            updateStatus(statusMessages[1], 40);
-            await new Promise(resolve => setTimeout(resolve, 400));
-            analysisResults = Analysis.analyzeInternship(parsedData);
+            const errorText = await predictResponse.text();
+            console.error('Prediction failed:', errorText);
+            throw new Error('Backend prediction failed: ' + errorText);
           }
 
           updateStatus(statusMessages[3], 80);
@@ -225,10 +226,26 @@
           }, 500);
         } catch (error) {
           console.error('Analysis error:', error);
-          UI.showAlert('Error during analysis. Please try again.', 'error');
-          setTimeout(() => {
-            Navigation.goToCheck();
-          }, 2000);
+          
+          // Show user-friendly error message
+          const statusEl = document.getElementById('status-text');
+          if (statusEl) {
+            statusEl.innerHTML = `
+              <div class="alert alert-error">
+                <p class="fs-lg mb-1">❌ Analysis Failed</p>
+                <p>${error.message || 'An error occurred during analysis.'}</p>
+                <p class="mt-1">Please check that:</p>
+                <ul style="text-align: left; margin-top: 0.5rem;">
+                  <li>You provided complete internship information</li>
+                  <li>The backend server is running (port 5000)</li>
+                  <li>All fields contain meaningful data</li>
+                </ul>
+                <button onclick="window.location.href='check.html'" class="btn btn-primary mt-2">
+                  Try Again
+                </button>
+              </div>
+            `;
+          }
         }
       })();
     });
