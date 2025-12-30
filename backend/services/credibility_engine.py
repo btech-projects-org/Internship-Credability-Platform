@@ -35,6 +35,9 @@ class CredibilityEngine:
             dict: Credibility score and breakdown
         """
         try:
+            print(f"\n[DEBUG] === NEW ANALYSIS REQUEST ===")
+            print(f"[DEBUG] Input keys: {list(data.keys())}")
+            
             # Check for parsed internship data from new simplified form
             has_parsed_data = 'parsed' in data
             parsed = data.get('parsed', {})
@@ -47,6 +50,13 @@ class CredibilityEngine:
             salary = data.get('salary') or parsed.get('salary')
             duration = data.get('duration') or parsed.get('duration')
             website = data.get('companyWebsite') or parsed.get('companyWebsite')
+            
+            print(f"[DEBUG] === INPUT DATA ===")
+            print(f"[DEBUG] Company: {company_name}")
+            print(f"[DEBUG] Email: {contact_email}")
+            print(f"[DEBUG] Job Desc Length: {len(str(job_desc)) if job_desc else 0}")
+            print(f"[DEBUG] Website: {website}")
+            print(f"[DEBUG] Has Parsed Data: {has_parsed_data}")
             
             # INTELLIGENT VALIDATION: Allow analysis even if some optional fields are missing
             missing_critical_fields = []
@@ -155,10 +165,20 @@ class CredibilityEngine:
             # 3. Sentiment analysis of job description
             if job_desc:
                 cleaned_text = self.text_cleaner.clean(job_desc)
+                print(f"[DEBUG] Analyzing sentiment for job description (length: {len(job_desc)}, cleaned: {len(cleaned_text)})")
                 sentiment = self.sentiment_analyzer.analyze(cleaned_text)
-                scores['sentiment_score'] = self._score_sentiment(sentiment)
+                print(f"[DEBUG] Sentiment result: {sentiment}")
+                sentiment_score = self._score_sentiment(sentiment)
+                print(f"[DEBUG] Sentiment score: {sentiment_score}")
+                scores['sentiment_score'] = sentiment_score
+                # Store raw sentiment for debugging
+                scores['sentiment_label'] = sentiment.get('label', 'UNKNOWN')
+                scores['sentiment_confidence'] = sentiment.get('score', 0.0)
             else:
+                print(f"[DEBUG] No job description provided")
                 scores['sentiment_score'] = 0.0  # Required field missing
+                scores['sentiment_label'] = 'NONE'
+                scores['sentiment_confidence'] = 0.0
             
             # 4. Verification score based on data quality
             verification_score = 0.0
@@ -174,33 +194,99 @@ class CredibilityEngine:
             
             scores['verification_score'] = verification_score
             
-            # 5. Red flag detection
+            # 5. Offer Quality Score - based on completeness and professionalism of job description
+            offer_quality_score = 0.0
+            if job_desc:
+                # Check for key components in job description
+                job_desc_lower = job_desc.lower()
+                
+                # Check for important offer components
+                has_responsibilities = any(word in job_desc_lower for word in ['responsibility', 'responsible', 'coordinating', 'managing', 'analyzing', 'leading', 'developing'])
+                has_requirements = any(word in job_desc_lower for word in ['skill', 'require', 'proficient', 'knowledge', 'experience'])
+                has_benefits = any(word in job_desc_lower for word in ['certificate', 'perk', 'benefit', 'stipend', 'salary', 'incentive', 'bonus'])
+                has_eligibility = any(word in job_desc_lower for word in ['apply', 'candidate', 'who can', 'eligible', 'criteria'])
+                
+                # Score based on completeness
+                offer_quality_score = 0.25 if has_responsibilities else 0.0
+                offer_quality_score += 0.25 if has_requirements else 0.0
+                offer_quality_score += 0.25 if has_benefits else 0.0
+                offer_quality_score += 0.25 if has_eligibility else 0.0
+                
+                # Bonus: Length indicates more detail (longer = more professional)
+                if len(job_desc.strip()) > 500:
+                    offer_quality_score = min(1.0, offer_quality_score + 0.1)
+            
+            scores['offer_quality_score'] = offer_quality_score
+            print(f"[DEBUG] After setting offer_quality_score:")
+            print(f"[DEBUG]   offer_quality_score value: {offer_quality_score}")
+            print(f"[DEBUG]   scores['offer_quality_score']: {scores.get('offer_quality_score')}")
+            print(f"[DEBUG]   'offer_quality_score' in scores: {'offer_quality_score' in scores}")
+            print(f"[DEBUG]   scores keys: {list(scores.keys())}")
+            
+            # 6. Red flag detection
             red_flags = self._detect_red_flags(data, parsed)
             red_flag_penalty = min(len(red_flags) * 0.25, 1.0)
             scores['red_flag_penalty'] = red_flag_penalty
             
             # Calculate final weighted score
+            # NOTE: Weights must sum to 1.0 for proper normalization
+            # Focus on signals available in typical job descriptions (no verification_score weight)
+            # Users typically paste raw job text without structured company/position/salary data
             positive_weight = (
-                scores['company_verification_score'] * 0.25 +
-                scores['url_score'] * 0.08 +
-                scores['email_match_score'] * 0.07 +
-                scores['sentiment_score'] * 0.05 +
-                scores['verification_score'] * 0.20
+                scores['company_verification_score'] * 0.40 +  # Company: 40% (most trusted)
+                scores['offer_quality_score'] * 0.30 +  # Offer quality: 30% (job desc completeness)
+                scores['sentiment_score'] * 0.20 +  # Sentiment: 20% (tone analysis)
+                scores['email_match_score'] * 0.10  # Email match: 10% (when available)
+                # NOTE: verification_score removed (0% when no structured data provided)
+            )  # Total: 1.00
+            
+            # IMPORTANT: If no fields are provided at all, give 0
+            # But if we have job description AND (company or parsed data), give credit based on what we have
+            has_any_data = bool(
+                job_desc or 
+                (company_name and company_name.lower() != 'unknown company') or
+                has_parsed_data
             )
-            # If there are no meaningful positive signals, return 0
-            if positive_weight <= 0.0:
+            
+            if not has_any_data:
+                # Truly empty submission - return 0
                 final_score = 0.0
+            elif positive_weight <= 0.05:  # Very small positive weight
+                # We have some data but missing key fields
+                # Give a baseline score based on sentiment analysis alone (if we have job description)
+                if scores['sentiment_score'] > 0:
+                    # Use sentiment as primary signal (minimum 20%, maximum 50% for incomplete data)
+                    final_score = 0.2 + (scores['sentiment_score'] * 0.3)
+                else:
+                    # No sentiment data either, minimal score
+                    final_score = 0.1  # 10% baseline for providing some data
             else:
+                # We have enough positive signals
                 # Apply red-flag penalty as a multiplier (never add baseline)
                 final_score = positive_weight * (1 - red_flag_penalty)
             
             # Ensure score is between 0 and 1
             final_score = max(0.0, min(1.0, final_score))
             
-            # Determine credibility level
+            # Calculate credibility level based on score
             level = self._get_credibility_level(final_score)
             
-            return {
+            print(f"[DEBUG] === FINAL BREAKDOWN ===")
+            print(f"[DEBUG] Scores dict keys: {list(scores.keys())}")
+            print(f"[DEBUG] offer_quality_score in scores: {'offer_quality_score' in scores}")
+            if 'offer_quality_score' in scores:
+                print(f"[DEBUG] offer_quality_score value: {scores['offer_quality_score']}")
+            print(f"[DEBUG] Company Verification: {scores['company_verification_score']}")
+            print(f"[DEBUG] URL Score: {scores['url_score']}")
+            print(f"[DEBUG] Email Match: {scores['email_match_score']}")
+            print(f"[DEBUG] Sentiment Score: {scores['sentiment_score']}")
+            print(f"[DEBUG] Verification Score: {scores['verification_score']}")
+            print(f"[DEBUG] Red Flag Penalty: {scores['red_flag_penalty']}")
+            print(f"[DEBUG] Final Score: {final_score * 100}%")
+            print(f"[DEBUG] === RESPONSE ===")
+            print(f"[DEBUG] credibility_score (display): {round(final_score * 100, 2)}%")
+            
+            response_dict = {
                 'credibility_score': round(final_score * 100, 2),
                 'credibility_level': level,
                 'breakdown': scores,
@@ -211,6 +297,11 @@ class CredibilityEngine:
                 },
                 'recommendations': self._generate_recommendations(final_score, red_flags, verification_warnings)
             }
+            
+            print(f"[DEBUG] response_dict['breakdown'] keys after assignment: {list(response_dict['breakdown'].keys())}")
+            print(f"[DEBUG] 'offer_quality_score' in response_dict['breakdown']: {'offer_quality_score' in response_dict['breakdown']}")
+            print(f"[DEBUG] breakdown.sentiment_score in response: {response_dict['breakdown'].get('sentiment_score')}")
+            return response_dict
             
         except Exception as e:
             return {
@@ -249,11 +340,32 @@ class CredibilityEngine:
     
     def _score_sentiment(self, sentiment: dict) -> float:
         """Convert sentiment to score"""
-        if sentiment['label'] == 'POSITIVE':
-            return 0.5 + (sentiment['score'] * 0.5)
-        elif sentiment['label'] == 'NEGATIVE':
-            return max(0.0, 0.5 - (sentiment['score'] * 0.5))
-        return 0.0  # Neutral/unknown contributes no credit
+        print(f"[DEBUG] _score_sentiment input: {sentiment}")
+        
+        # Handle error cases
+        if 'error' in sentiment or 'label' not in sentiment:
+            # If sentiment analysis failed, give neutral/moderate credit
+            print(f"[DEBUG] Error detected, returning 0.5")
+            return 0.5
+        
+        label = sentiment.get('label', 'NEUTRAL')
+        score_val = sentiment.get('score', 0.5)
+        print(f"[DEBUG] Label: {label}, Score: {score_val}")
+        
+        if label == 'POSITIVE':
+            # Positive sentiment: 55% to 100% credibility range
+            result = 0.55 + (score_val * 0.45)
+            print(f"[DEBUG] POSITIVE: 0.55 + ({score_val} * 0.45) = {result}")
+            return result
+        elif label == 'NEGATIVE':
+            # Negative sentiment: 0% to 45% credibility range
+            result = max(0.0, 0.45 - (score_val * 0.45))
+            print(f"[DEBUG] NEGATIVE: 0.45 - ({score_val} * 0.45) = {result}")
+            return result
+        else:
+            # NEUTRAL: Professional tone gets 50% baseline
+            print(f"[DEBUG] NEUTRAL: returning 0.5")
+            return 0.5
     
     def _detect_red_flags(self, data: dict, parsed: Optional[dict] = None) -> dict:
         """Detect red flags in internship offer"""

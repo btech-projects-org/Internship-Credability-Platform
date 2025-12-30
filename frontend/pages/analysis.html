@@ -154,13 +154,21 @@
 
           const predictData = {
             ...parsedData,
+            rawInternshipInfo: parsedData.rawInternshipInfo || '',
             companyName: parsedData.parsed?.companyName || parsedData.companyName || 'Unknown',
             contactEmail: parsedData.parsed?.contactEmail || parsedData.contactEmail || '',
-            jobDescription: parsedData.parsed?.jobDescription || parsedData.jobDescription || '',
+            jobDescription: parsedData.parsed?.jobDescription || parsedData.jobDescription || parsedData.rawInternshipInfo || '',
             resumeText: parsedData.resumeText || ''
           };
+          
+          console.log('=== PREDICT DATA BEFORE SEND ===', {
+            jobDescLength: (predictData.jobDescription || '').length,
+            rawInfoLength: (predictData.rawInternshipInfo || '').length,
+            hasJobDesc: !!(predictData.jobDescription),
+            companyName: predictData.companyName
+          });
 
-          const predictResponse = await fetch(`${CONFIG.API_BASE_URL}/predict`, {
+          const predictResponse = await fetch(`${CONFIG.API_BASE_URL}/predict?t=${Date.now()}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -173,18 +181,23 @@
           if (predictResponse.ok) {
             const predictResult = await predictResponse.json();
             
+            console.log('=== BACKEND RESPONSE ===', predictResult);
+            console.log('Breakdown:', predictResult.breakdown);
+            
             updateStatus(statusMessages[2], 60);
             await new Promise(resolve => setTimeout(resolve, 400));
 
             // Convert backend result to frontend format
             const breakdown = predictResult.breakdown || {};
+            console.log('Sentiment Score (0-1):', breakdown.sentiment_score);
+            console.log('Communication Score (%%):', Math.round((breakdown.sentiment_score || 0) * 100));
             analysisResults = {
               credibility_score: predictResult.credibility_score || 0,
               totalScore: predictResult.credibility_score || 0,
               credibilityLevel: predictResult.credibility_level || 'VERY_LOW',
               scores: {
                 companyScore: Math.round((breakdown.company_verification_score || 0) * 100),
-                offerScore: Math.round((breakdown.url_score || 0) * 100),
+                offerScore: Math.round((breakdown.offer_quality_score || 0) * 100),  // Now uses offer_quality_score
                 communicationScore: Math.round((breakdown.sentiment_score || 0) * 100),
                 requirementsScore: Math.round((breakdown.verification_score || 0) * 100)
               },

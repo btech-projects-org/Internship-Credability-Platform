@@ -318,7 +318,7 @@ class InternshipInfoParser:
             'vague_communication': [
                 r'(?:no\s+)?(?:experience|skills?)\s+(?:required|needed)',
                 r'simple\s+tasks',
-                r'work\s+from\s+(?:home|anywhere)',
+                # NOTE: Removed 'work from home' - now a standard practice, not a red flag
                 r'(?:complete|just)\s+(?:simple|easy)\s+tasks'
             ],
             'no_contract': [

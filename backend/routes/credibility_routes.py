@@ -141,15 +141,32 @@ def predict_credibility():
     try:
         data = request.get_json()
         
+        print(f"\n[DEBUG] === PREDICT ENDPOINT ===")
+        print(f"[DEBUG] Received keys: {list(data.keys())}")
+        
+        # Ensure jobDescription is populated
+        if not data.get('jobDescription') and data.get('rawInternshipInfo'):
+            print(f"[DEBUG] No jobDescription, using rawInternshipInfo")
+            data['jobDescription'] = data['rawInternshipInfo']
+        
+        job_desc_len = len(data.get('jobDescription', ''))
+        print(f"[DEBUG] jobDescription length: {job_desc_len}")
+        
         # Pass data directly to engine for analysis
         # Engine will return 0% if any critical fields are missing
         
         # Delegate to credibility engine
         result = engine.analyze(data)
         
+        print(f"[DEBUG] === BEFORE JSONIFY ===")
+        print(f"[DEBUG] Result keys: {list(result.keys())}")
+        print(f"[DEBUG] Breakdown keys: {list(result.get('breakdown', {}).keys())}")
+        print(f"[DEBUG] offer_quality_score in result['breakdown']: {'offer_quality_score' in result.get('breakdown', {})}")
+        
         return jsonify(result), 200
         
     except Exception as e:
+        print(f"[ERROR] Prediction failed: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -170,6 +187,81 @@ def extract_url_features():
         features = url_extractor.extract(data['url'])
         
         return jsonify(features), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@credibility_bp.route('/debug_sentiment', methods=['POST'])
+def debug_sentiment():
+    """Debug endpoint to trace sentiment calculation"""
+    _ensure_initialized()
+    try:
+        data = request.get_json()
+        job_desc = data.get('jobDescription', '')
+        
+        print(f"\n[DEBUG] === SENTIMENT DEBUG ===")
+        print(f"[DEBUG] Job desc length: {len(job_desc)}")
+        print(f"[DEBUG] Job desc preview: {job_desc[:100]}...")
+        
+        # Clean text
+        cleaned = engine.text_cleaner.clean(job_desc)
+        print(f"[DEBUG] Cleaned length: {len(cleaned)}")
+        print(f"[DEBUG] Cleaned preview: {cleaned[:100]}...")
+        
+        # Analyze sentiment
+        sentiment = engine.sentiment_analyzer.analyze(cleaned)
+        print(f"[DEBUG] Sentiment result: {sentiment}")
+        
+        # Score it
+        sentiment_score = engine._score_sentiment(sentiment)
+        print(f"[DEBUG] Sentiment score (0-1): {sentiment_score}")
+        print(f"[DEBUG] Display (%): {sentiment_score * 100}%")
+        
+        return jsonify({
+            'jobDescLength': len(job_desc),
+            'cleanedLength': len(cleaned),
+            'sentiment': sentiment,
+            'sentimentScore': sentiment_score,
+            'displayPercent': round(sentiment_score * 100, 2)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+def test_sentiment():
+    """Test endpoint to check sentiment analysis"""
+    _ensure_initialized()
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        
+        from services.sentiment_analyzer import SentimentAnalyzer
+        from preprocessing.text_cleaner import TextCleaner
+        
+        analyzer = SentimentAnalyzer()
+        cleaner = TextCleaner()
+        
+        cleaned = cleaner.clean(text)
+        sentiment = analyzer.analyze(cleaned)
+        
+        # Calculate score like in credibility engine
+        if 'error' in sentiment or 'label' not in sentiment:
+            score = 0.6
+        elif sentiment['label'] == 'POSITIVE':
+            score = 0.5 + (sentiment['score'] * 0.5)
+        elif sentiment['label'] == 'NEGATIVE':
+            score = max(0.0, 0.5 - (sentiment['score'] * 0.5))
+        else:
+            score = 0.6
+        
+        return jsonify({
+            'original_length': len(text),
+            'cleaned_text': cleaned,
+            'cleaned_length': len(cleaned),
+            'sentiment': sentiment,
+            'calculated_score': score,
+            'display_percentage': round(score * 100, 2)
+        }), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -48,7 +48,10 @@ class SentimentAnalyzer:
                 'sentiment_class': self._map_to_class(result['label'])
             }
         except Exception as e:
-            return {'error': str(e), 'label': 'NEUTRAL', 'score': 0.5}
+            # If AI model fails, use simple heuristic-based sentiment
+            print(f"[WARNING] Sentiment AI model failed: {e}")
+            print(f"[INFO] Using heuristic-based sentiment analysis instead")
+            return self._heuristic_sentiment(text)
     
     def batch_analyze(self, texts: List[str]) -> List[Dict]:
         """
@@ -108,3 +111,48 @@ class SentimentAnalyzer:
             return -result['score']
         else:
             return 0.0
+    
+    def _heuristic_sentiment(self, text: str) -> Dict:
+        """
+        Simple heuristic-based sentiment when AI model unavailable
+        Analyzes based on positive/negative keywords and structure
+        """
+        text_lower = text.lower()
+        
+        # Positive indicators for professional internship postings
+        positive_words = [
+            'opportunity', 'growth', 'learn', 'mentorship', 'hands-on',
+            'experience', 'develop', 'gain', 'professional', 'team',
+            'innovative', 'exciting', 'excellent', 'great', 'outstanding',
+            'career', 'advancement', 'training', 'skills', 'collaborative',
+            'dynamic', 'cutting-edge', 'industry', 'expert', 'comprehensive'
+        ]
+        
+        # Negative indicators
+        negative_words = [
+            'scam', 'fraud', 'fake', 'payment required', 'pay upfront',
+            'suspicious', 'unclear', 'vague', 'confusing', 'unprofessional',
+            'urgent', 'act now', 'limited time', 'guarantee', 'no experience needed'
+        ]
+        
+        # Count occurrences
+        positive_count = sum(1 for word in positive_words if word in text_lower)
+        negative_count = sum(1 for word in negative_words if word in text_lower)
+        
+        # Length check (professional postings are detailed)
+        word_count = len(text.split())
+        has_good_length = 50 <= word_count <= 1000
+        
+        # Determine sentiment
+        if negative_count > 2:
+            return {'label': 'NEGATIVE', 'score': 0.7, 'sentiment_class': 0, 'method': 'heuristic'}
+        elif positive_count >= 5 and has_good_length:
+            # Professional, detailed posting with positive words
+            confidence = min(0.9, 0.6 + (positive_count * 0.05))
+            return {'label': 'POSITIVE', 'score': confidence, 'sentiment_class': 1, 'method': 'heuristic'}
+        elif positive_count >= 2:
+            # Some positive indicators
+            return {'label': 'POSITIVE', 'score': 0.65, 'sentiment_class': 1, 'method': 'heuristic'}
+        else:
+            # Neutral/professional tone
+            return {'label': 'NEUTRAL', 'score': 0.7, 'sentiment_class': 2, 'method': 'heuristic'}

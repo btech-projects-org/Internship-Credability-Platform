@@ -2,6 +2,16 @@
 # FLASK APPLICATION BOOTSTRAP
 # ========================
 
+# Auto-install dependencies on first run
+try:
+    from auto_install import install_dependencies, check_imports
+    print("Initializing environment...")
+    install_dependencies()
+    check_imports()
+except Exception as e:
+    print(f"Warning: Could not auto-install dependencies: {e}")
+    print("Please run: pip install -r requirement1.txt")
+
 from flask import Flask
 from flask_cors import CORS
 import os
