@@ -24,6 +24,8 @@
 
 ## 🚀 Quick Start
 
+USE Python 3.11  version
+
 ### Windows (Easiest)
 ```bash
 # 1. Navigate to backend
