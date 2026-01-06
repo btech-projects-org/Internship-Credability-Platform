@@ -1,0 +1,60 @@
+Project Overview
+=================
+
+1) Project Map & Responsibilities
+- Backend (Flask)
+  • backend/app.py: Flask entrypoint, registers blueprints, CORS.
+  • backend/routes/credibility_routes.py: API endpoints /api/parse_internship_info, /api/verify_company, /api/predict, /api/extract_url_features; lazy initializes services.
+  • backend/services/info_parser.py: Parses raw internship text into structured fields (company, position, salary, duration, work type, red flags, jobDescription).
+  • backend/services/company_verifier.py: Heuristic online presence/scam checks; scores safety; platform indicators.
+  • backend/services/credibility_engine.py: Final weighted credibility scoring (company verification, URL, email, sentiment, parsed-data quality, red-flag penalty); recommendations.
+  • backend/services/url_feature_extractor.py: URL safety features (https, hyphens, digits, entropy).
+  • backend/services/sentiment_analyzer.py: TextBlob sentiment wrapper (fallback neutral).
+  • backend/preprocessing/text_cleaner.py: Basic text cleaning for sentiment.
+  • Models (optional): backend/models/random_forest_inference.py, backend/models/text_cnn_inference.py expect saved models under backend/models/saved/; if missing, heuristics still run.
+
+- Frontend (Static HTML/CSS/JS)
+  • Pages: frontend/pages/check.html (single textarea input, resume vs JD validator), analysis.html (calls backend parse + predict), result.html (shows scores), plus about/contact/etc.
+  • Core JS: frontend/js/core/navigation.js (navigation, storage), storage.js (localStorage helpers), validation.js (form validation).
+  • Analysis JS: frontend/js/analysis/analysis.js (legacy local scoring fallback), resume.js (resume↔JD matching; keyword fallback, HF embeddings if key set), result.js (render result cards).
+  • Config: frontend/js/config/config.js (CONFIG.API_BASE_URL, optional HF_API_KEY).
+  • Assets/CSS: frontend/css/** layouts, components, animations.
+
+- Scripts & Utilities
+  • frontend/scripts/serve_frontend.py: Simple static server (port 8000 default).
+  • backend/scripts/smoke_tests.py, backend/scripts/check_imports.py: Quick checks.
+  • frontend/scripts/update_paths.ps1: Path utilities.
+  • Tests: tests/run_tests.py, tests/integration/test_api_integration.py, etc.
+
+- Datasets/Loaders
+  • backend/datasets/huggingface_loader.py, backend/datasets/kaggle_loader.py: Helpers/stubs for dataset loading (not required at runtime).
+
+2) Dependencies to Install
+- Python backend (from project root):
+  pip install -r backend/requirements.txt
+  Key libs: Flask, flask-cors, requests, python-dotenv, tldextract, url-normalize, whois, beautifulsoup4, nltk, textblob, joblib.
+- Frontend: plain HTML/CSS/JS (no npm build needed).
+- Optional: Hugging Face Inference API key (set HF_API_KEY in frontend/js/config/config.js or localStorage hf_api_key) for resume↔JD semantic matching.
+
+3) Run Commands (PowerShell, from project root)
+- Activate venv (if not already):
+  .\.venv\Scripts\Activate.ps1
+- Start backend:
+  .\.venv\Scripts\python.exe backend\app.py
+  Serves at http://localhost:5000 (API base http://localhost:5000/api)
+- Start frontend:
+  .\.venv\Scripts\python.exe frontend\scripts\serve_frontend.py
+  Serves at http://localhost:8000
+- Optional tests:
+  .\.venv\Scripts\python.exe tests\run_tests.py
+
+4) Feature Flow (simplified)
+- User enters raw internship info on Check page (single textarea; optional JD/resume paste).
+- Frontend calls /api/parse_internship_info to extract structured fields.
+- Frontend calls /api/predict with parsed data → backend credibility_engine combines: company verification, URL/email checks, sentiment, parsed-data quality, red-flag penalty.
+- Results rendered on Result page; resume vs JD match uses keyword overlap or HF embeddings if key is present.
+
+5) Notes
+- If you see “Model not found at models/saved/random_forest.pkl”, it’s informational; heuristics still run.
+- Resume/JD validation: ensure both textareas have content; HF key optional; keyword fallback works without it.
+- If backend port is busy, stop old python processes or change port in backend/app.py.

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Contact the Internship Credibility Checker team">
+  <title>Contact - Credibility Checker</title>
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <!-- Background -->
+
+  <!-- Page Content -->
+  <div class="page-content">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="index.html" class="nav-brand">🎓 Internship Checker</a>
+        <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="check.html" class="nav-link">Check Internship</a></li>
+          <li><a href="workflow.html" class="nav-link">How It Works</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="contact.html" class="nav-link active">Contact</a></li>
+          <li><a href="resume-templates.html" class="nav-link">ATS Templates</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero hero-compact">
+      <div class="hero-content fade-in">
+        <h1>Contact Us</h1>
+        <p>We'd love to hear from you</p>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="section">
+      <div class="container">
+        <div class="grid grid-2 gap-3">
+          <!-- Contact Form -->
+          <div class="fade-in-left">
+            <div class="card card-dark">
+              <h2>Send Us a Message</h2>
+              <form id="contact-form">
+                <div class="form-group">
+                  <label class="form-label" for="name">Your Name *</label>
+                  <input type="text" id="name" name="name" class="form-input" required>
+                  <div class="form-error"></div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="email">Your Email *</label>
+                  <input type="email" id="email" name="email" class="form-input" required>
+                  <div class="form-error"></div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="subject">Subject *</label>
+                  <select id="subject" name="subject" class="form-select" required>
+                    <option value="">Select a subject...</option>
+                    <option value="general">General Inquiry</option>
+                    <option value="feedback">Feedback</option>
+                    <option value="report">Report a Scam</option>
+                    <option value="bug">Technical Issue</option>
+                    <option value="partnership">Partnership</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <div class="form-error"></div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="message">Message *</label>
+                  <textarea id="message" name="message" class="form-textarea" required></textarea>
+                  <div class="form-error"></div>
+                </div>
+
+                <div class="form-group">
+                  <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="fade-in-right">
+            <div class="card card-dark mb-3">
+              <h3>📧 Email</h3>
+              <p class="fs-lg">contact@internshipchecker.com</p>
+              <p>We typically respond within 24-48 hours</p>
+            </div>
+
+            <div class="card card-dark mb-3">
+              <h3>💬 Support Hours</h3>
+              <p class="fs-lg">Monday - Friday</p>
+              <p>9:00 AM - 6:00 PM (EST)</p>
+            </div>
+
+            <div class="card card-dark mb-3">
+              <h3>🌐 Social Media</h3>
+              <div class="flex gap-1 mt-1">
+                <a href="#" class="btn btn-secondary">Twitter</a>
+                <a href="#" class="btn btn-secondary">LinkedIn</a>
+                <a href="#" class="btn btn-secondary">Facebook</a>
+              </div>
+            </div>
+
+            <div class="card card-dark">
+              <h3>🚨 Report a Scam</h3>
+              <p>If you've encountered a fraudulent internship, please report it to help protect other students.</p>
+              <button class="btn btn-primary mt-2" onclick="document.getElementById('subject').value='report'; window.scrollTo({top: 0, behavior: 'smooth'});">
+                Report Now
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title fade-in">Frequently Asked Questions</h2>
+        <div class="max-w-800 mx-auto">
+          <div class="card mb-2 fade-in-up delay-1">
+            <h3>How accurate is the credibility checker?</h3>
+            <p>Our algorithm has a 98% accuracy rate based on thousands of verified cases. However, we always recommend using the results as one factor in your decision-making process.</p>
+          </div>
+
+          <div class="card mb-2 fade-in-up delay-2">
+            <h3>Is my data stored or shared?</h3>
+            <p>No. All analysis happens locally in your browser. We don't collect, store, or share any of your data.</p>
+          </div>
+
+          <div class="card mb-2 fade-in-up delay-3">
+            <h3>Can I use this service for free?</h3>
+            <p>Yes! Our service is completely free and will always remain free. We believe everyone deserves access to scam protection.</p>
+          </div>
+
+          <div class="card mb-2 fade-in-up delay-4">
+            <h3>What should I do if I find a scam?</h3>
+            <p>Report it immediately using our contact form. We'll add it to our database to help protect other students. Also report it to your local authorities and the platform where you found the listing.</p>
+          </div>
+
+          <div class="card fade-in-up delay-5">
+            <h3>Can you verify a specific company for me?</h3>
+            <p>We provide tools for you to analyze offers yourself. For specific verification requests, please use our contact form and we'll do our best to help.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Internship Checker</h3>
+          <p>Empowering students to make informed decisions about internship opportunities.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="check.html">Check Internship</a></li>
+            <li><a href="workflow.html">How It Works</a></li>
+            <li><a href="about.html">About Us</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Internship Credibility Checker. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Alert Container -->
+  <div id="alert-container"></div>
+
+  <!-- JavaScript Files -->
+  <script src="../js/core/validation.js"></script>
+  <script src="../js/core/storage.js"></script>
+  <script src="../js/core/ui.js"></script>
+  <script src="../js/core/navigation.js"></script>
+  <script src="../js/utils/button-state.js"></script>
+
+  <script>
+    // Handle contact form submission
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Validate form
+      const validationRules = {
+        name: { 
+          required: true, 
+          requiredMessage: 'Please enter your name',
+          minLength: 2,
+          minLengthMessage: 'Name must be at least 2 characters'
+        },
+        email: { 
+          required: true, 
+          email: true, 
+          emailMessage: 'Please enter a valid email address' 
+        },
+        subject: { 
+          required: true, 
+          requiredMessage: 'Please select a subject' 
+        },
+        message: { 
+          required: true, 
+          requiredMessage: 'Please enter a message',
+          minLength: 10,
+          minLengthMessage: 'Message must be at least 10 characters'
+        }
+      };
+
+      if (Validation.validateForm('contact-form', validationRules)) {
+        // In a real application, this would send the data to a server
+        UI.showAlert('Thank you for your message! We\'ll get back to you soon.', 'success');
+        
+        // Reset form
+        document.getElementById('contact-form').reset();
+
+        // Scroll to top to see the alert
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  </script>
+</body>
+</html>

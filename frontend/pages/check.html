@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Check your internship credibility">
+  <title>Check Internship - Credibility Checker</title>
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <!-- Background -->
+
+  <!-- Page Content -->
+  <div class="page-content">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="index.html" class="nav-brand">🎓 Internship Checker</a>
+        <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="check.html" class="nav-link active">Check Internship</a></li>
+          <li><a href="workflow.html" class="nav-link">How It Works</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li><a href="resume-templates.html" class="nav-link">ATS Templates</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Check Form Section -->
+    <section class="section">
+      <div class="container">
+        <div class="max-w-800 mx-auto">
+          <h1 class="text-center fade-in">Check Your Internship</h1>
+          <p class="text-center mb-3 fade-in">Fill out the form below to analyze the credibility of your internship offer</p>
+
+          <div class="card card-dark fade-in-up">
+            <form id="check-form">
+              <!-- Internship Information -->
+              <div class="card-header">
+                <h3>📋 Internship Information</h3>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="internshipInfo">Paste all internship information here *</label>
+                <textarea 
+                  id="internshipInfo" 
+                  name="internshipInfo" 
+                  class="form-textarea" 
+                  rows="12" 
+                  placeholder="Paste or type all information about the internship offer here. Include:&#10;- Company name and website&#10;- Your contact email&#10;- Position title and description&#10;- Salary/stipend details&#10;- Any concerns or red flags&#10;- Communication you received&#10;- Job description or requirements&#10;- Any other relevant details&#10;&#10;The system will automatically parse and analyze this information."
+                  required></textarea>
+                <div class="form-error"></div>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary btn-block btn-large">
+                  Analyze Credibility
+                </button>
+              </div>
+              
+              <!-- Resume Match -->
+              <div class="card-header mt-3">
+                <h3>📄 Resume Match</h3>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="jobDescription">Paste Job Description</label>
+                <textarea id="jobDescription" name="jobDescription" class="form-textarea" rows="6" placeholder="Paste the JD text here for matching..."></textarea>
+                <div class="form-error"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="resumeText">Paste Your Resume Text</label>
+                <textarea id="resumeText" name="resumeText" class="form-textarea" rows="8" placeholder="Paste the plain text of your resume here (recommended for accurate matching)..."></textarea>
+                <div class="form-error"></div>
+              </div>
+              <div class="form-group">
+                <button type="button" id="validate-resume" class="btn btn-secondary">Validate Resume vs JD</button>
+              </div>
+              <div id="resume-match-preview" class="mt-2"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-bottom">
+        <p>&copy; 2025 Internship Credibility Checker. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Alert Container -->
+  <div id="alert-container"></div>
+
+  <!-- JavaScript Files -->
+  <script src="../js/core/validation.js"></script>
+  <script src="../js/core/storage.js"></script>
+  <script src="../js/config/config.js"></script>
+  <script src="../js/analysis/resume.js"></script>
+  <script src="../js/core/ui.js"></script>
+  <script src="../js/core/navigation.js"></script>
+  <script src="../js/utils/button-state.js"></script>
+
+  <script>
+    // Handle form submission
+    document.getElementById('check-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Get the raw internship information
+      const internshipInfo = document.getElementById('internshipInfo').value.trim();
+
+      if (!internshipInfo) {
+        document.querySelector('[for="internshipInfo"]').parentElement.querySelector('.form-error').textContent = 'Please provide internship information';
+        return;
+      }
+
+      // Collect form data with parsed info
+      const formData = {
+        rawInternshipInfo: internshipInfo,
+        jobDescription: document.getElementById('jobDescription')?.value || '',
+        resumeText: document.getElementById('resumeText')?.value || ''
+      };
+
+      // Navigation will pass this to the analysis page
+      Navigation.goToAnalysis(formData);
+    });
+  </script>
+  <script>
+    // Validate Resume vs JD button
+    (function(){
+      const validateBtn = document.getElementById('validate-resume');
+      const previewEl = document.getElementById('resume-match-preview');
+      if (!validateBtn) return;
+
+      validateBtn.addEventListener('click', async () => {
+        const jdText = document.getElementById('jobDescription')?.value || '';
+        const resumeText = document.getElementById('resumeText')?.value || '';
+
+        if (!jdText.trim() || !resumeText.trim()) {
+          previewEl.innerHTML = '<div class="alert alert-warning">Please paste both Job Description and Resume text.</div>';
+          return;
+        }
+
+        previewEl.innerHTML = '<div class="alert alert-info">Validating resume against JD...</div>';
+        try {
+          const position = document.getElementById('position')?.value || '';
+          const match = await Resume.matchScore(resumeText, jdText, {
+            position
+          });
+
+          const levelClass = match.score >= 80 ? 'score-high' : match.score >= 60 ? 'score-moderate' : match.score >= 40 ? 'score-low' : 'score-very-low';
+
+          // Build card without inline styles; set progress width via JS
+          previewEl.innerHTML = `
+            <div class="card card-dark fade-in">
+              <h3>Resume ↔ JD Match</h3>
+              <p class="mb-1">Method: ${match.method === 'semantic+keywords' ? 'Semantic + Keywords' : 'Keywords Only'}</p>
+              ${match.semanticScore !== undefined ? `<p class="mb-1">Semantic: ${Math.round(match.semanticScore)}% · Keywords: ${Math.round(match.keywordScore)}%</p>` : ''}
+              <div class="progress-bar">
+                <div class="progress-fill" id="resume-match-bar"></div>
+              </div>
+              <p class="fs-lg">Score: <span class="${levelClass}">${Math.round(match.score)}%</span></p>
+              ${Array.isArray(match.missingKeywords) && match.missingKeywords.length ? `
+                <div class="panel mt-2">
+                  <h4>Suggested Missing Keywords</h4>
+                  <p class="mb-0">${match.missingKeywords.join(', ')}</p>
+                </div>
+              ` : ''}
+            </div>
+          `;
+          const bar = document.getElementById('resume-match-bar');
+          if (bar) bar.style.width = `${Math.round(match.score)}%`;
+        } catch (err) {
+          previewEl.innerHTML = `<div class="alert alert-error">Validation failed: ${err.message || 'Unknown error'}</div>`;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

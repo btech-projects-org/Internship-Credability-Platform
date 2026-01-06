@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your internship credibility results">
+  <title>Results - Credibility Checker</title>
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="../css/main.css">
+
+  <style>
+    .score-circle {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 8px solid;
+      position: relative;
+    }
+
+    .score-circle.score-high {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    .score-circle.score-moderate {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .score-circle.score-low {
+      border-color: #fb923c;
+      background: rgba(251, 146, 60, 0.1);
+    }
+
+    .score-circle.score-very-low {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .score-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .score-high {
+      color: #22c55e;
+    }
+
+    .score-moderate {
+      color: #f59e0b;
+    }
+
+    .score-low {
+      color: #fb923c;
+    }
+
+    .score-very-low {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background -->
+
+  <!-- Page Content -->
+  <div class="page-content">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="index.html" class="nav-brand">🎓 Internship Checker</a>
+        <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="check.html" class="nav-link">Check Internship</a></li>
+          <li><a href="workflow.html" class="nav-link">How It Works</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li><a href="resume-templates.html" class="nav-link">ATS Templates</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Results Section -->
+    <section class="section">
+      <div class="container">
+        <h1 class="text-center fade-in">Credibility Analysis Results</h1>
+
+        <!-- Warnings -->
+        <div id="warnings" class="mb-3"></div>
+
+        <!-- Score Overview -->
+        <div id="score-overview" class="mb-3"></div>
+
+        <!-- Resume Match -->
+        <div id="resume-match" class="mb-3"></div>
+
+        <!-- Detailed Scores -->
+        <div class="grid grid-2 mb-3">
+          <div id="detailed-scores" class="grid grid-2 grid-span-all"></div>
+        </div>
+
+        <!-- Chart and Recommendations -->
+        <div class="grid grid-2">
+          <div id="score-chart"></div>
+          <div id="recommendations"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-3">
+          <div class="card card-dark fade-in">
+            <div class="flex gap-1 justify-center flex-wrap">
+              <a href="check.html" class="btn btn-primary">Check Another Internship</a>
+              <a href="index.html" class="btn btn-secondary">Back to Home</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-bottom">
+        <p>&copy; 2025 Internship Credibility Checker. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Alert Container -->
+  <div id="alert-container"></div>
+
+  <!-- JavaScript Files -->
+  <script src="../js/core/validation.js"></script>
+  <script src="../js/core/storage.js"></script>
+  <script src="../js/analysis/analysis.js"></script>
+  <script src="../js/analysis/result.js"></script>
+  <script src="../js/core/ui.js"></script>
+  <script src="../js/core/navigation.js"></script>
+  <script src="../js/utils/button-state.js"></script>
+
+  <script>
+    // Display results on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const results = Storage.getAnalysisResults();
+      
+      if (!results) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      Result.displayResults(results);
+    });
+  </script>
+</body>
+</html>

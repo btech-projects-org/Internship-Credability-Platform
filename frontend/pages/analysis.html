@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Analyzing internship credibility">
+  <title>Analysis - Credibility Checker</title>
+  
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+  <!-- Background -->
+
+  <!-- Page Content -->
+  <div class="page-content">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <a href="index.html" class="nav-brand">🎓 Internship Checker</a>
+        <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="check.html" class="nav-link">Check Internship</a></li>
+          <li><a href="workflow.html" class="nav-link">How It Works</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Analysis Section -->
+    <section class="section">
+      <div class="container">
+        <div class="max-w-600 mx-auto text-center">
+          <h1 class="fade-in">Analyzing Your Internship</h1>
+          <p class="fade-in">Please wait while we evaluate the credibility...</p>
+
+          <div id="analysis-status" class="mt-3">
+            <div class="spinner"></div>
+            <div class="card card-dark mt-3 fade-in-up">
+              <div id="status-text">
+                <p class="fs-lg mb-1">🔍 Analyzing company information...</p>
+                <div class="progress-bar">
+                  <div class="progress-fill" id="progress-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-bottom">
+        <p>&copy; 2025 Internship Credibility Checker. All rights reserved.</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Alert Container -->
+  <div id="alert-container"></div>
+
+  <!-- JavaScript Files -->
+  <script src="../js/core/validation.js"></script>
+  <script src="../js/core/storage.js"></script>
+  <script src="../js/config/config.js"></script>
+  <script src="../js/analysis/resume.js"></script>
+  <script src="../js/analysis/analysis.js"></script>
+  <script src="../js/core/ui.js"></script>
+  <script src="../js/core/navigation.js"></script>
+  <script src="../js/utils/button-state.js"></script>
+
+  <script>
+    // Analysis process with backend parsing
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get saved internship data
+      const internshipData = Storage.getInternshipData();
+
+      if (!internshipData) {
+        window.location.href = 'check.html';
+        return;
+      }
+
+      const statusMessages = [
+        '🔍 Parsing internship information...',
+        '✅ Analyzing company details...',
+        '📊 Evaluating offer credibility...',
+        '💬 Assessing communication patterns...',
+        '🎯 Computing final credibility score...'
+      ];
+
+      let currentStep = 0;
+      const statusText = document.getElementById('status-text');
+
+      // Update status function
+      const updateStatus = (message, percentage) => {
+        statusText.innerHTML = `
+          <p class="fs-lg mb-1">${message}</p>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+        `;
+        const newFill = statusText.querySelector('.progress-fill');
+        if (newFill) {
+          newFill.style.width = `${percentage}%`;
+        }
+      };
+
+      // Step 1: Parse raw internship info if available
+      (async () => {
+        try {
+          let parsedData = internshipData;
+
+          // If raw internship info exists, parse it through backend
+          if (internshipData.rawInternshipInfo) {
+            updateStatus(statusMessages[0], 20);
+
+            const parseResponse = await fetch(`${CONFIG.API_BASE_URL}/parse_internship_info`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                rawInternshipInfo: internshipData.rawInternshipInfo
+              })
+            });
+
+            if (parseResponse.ok) {
+              const parseResult = await parseResponse.json();
+              parsedData = {
+                ...internshipData,
+                parsed: parseResult.parsed || {}
+              };
+            } else {
+              const errorText = await parseResponse.text();
+              console.warn('Parsing failed:', errorText);
+              // Continue with unparsed data
+              parsedData = internshipData;
+            }
+          }
+
+          // Step 2: Call backend credibility prediction
+          updateStatus(statusMessages[1], 40);
+          await new Promise(resolve => setTimeout(resolve, 400));
+
+          const predictData = {
+            ...parsedData,
+            rawInternshipInfo: parsedData.rawInternshipInfo || '',
+            companyName: parsedData.parsed?.companyName || parsedData.companyName || 'Unknown',
+            contactEmail: parsedData.parsed?.contactEmail || parsedData.contactEmail || '',
+            jobDescription: parsedData.parsed?.jobDescription || parsedData.jobDescription || parsedData.rawInternshipInfo || '',
+            resumeText: parsedData.resumeText || ''
+          };
+          
+          console.log('=== PREDICT DATA BEFORE SEND ===', {
+            jobDescLength: (predictData.jobDescription || '').length,
+            rawInfoLength: (predictData.rawInternshipInfo || '').length,
+            hasJobDesc: !!(predictData.jobDescription),
+            companyName: predictData.companyName
+          });
+
+          const predictResponse = await fetch(`${CONFIG.API_BASE_URL}/predict?t=${Date.now()}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(predictData)
+          });
+
+          let analysisResults;
+
+          if (predictResponse.ok) {
+            const predictResult = await predictResponse.json();
+            
+            console.log('=== BACKEND RESPONSE ===', predictResult);
+            console.log('Breakdown:', predictResult.breakdown);
+            
+            updateStatus(statusMessages[2], 60);
+            await new Promise(resolve => setTimeout(resolve, 400));
+
+            // Convert backend result to frontend format
+            const breakdown = predictResult.breakdown || {};
+            console.log('Sentiment Score (0-1):', breakdown.sentiment_score);
+            console.log('Communication Score (%%):', Math.round((breakdown.sentiment_score || 0) * 100));
+            analysisResults = {
+              credibility_score: predictResult.credibility_score || 0,
+              totalScore: predictResult.credibility_score || 0,
+              credibilityLevel: predictResult.credibility_level || 'VERY_LOW',
+              scores: {
+                companyScore: Math.round((breakdown.company_verification_score || 0) * 100),
+                offerScore: Math.round((breakdown.offer_quality_score || 0) * 100),  // Now uses offer_quality_score
+                communicationScore: Math.round((breakdown.sentiment_score || 0) * 100),
+                requirementsScore: Math.round((breakdown.verification_score || 0) * 100)
+              },
+              breakdown: breakdown,
+              red_flags: predictResult.red_flags || {},
+              recommendations: predictResult.recommendations || [],
+              warnings: predictResult.warnings || [],
+              parsed: parsedData.parsed,
+              timestamp: new Date().toISOString()
+            };
+          } else {
+            const errorText = await predictResponse.text();
+            console.error('Prediction failed:', errorText);
+            throw new Error('Backend prediction failed: ' + errorText);
+          }
+
+          updateStatus(statusMessages[3], 80);
+          await new Promise(resolve => setTimeout(resolve, 400));
+
+          // Compute resume match if data available
+          const jdText = parsedData.parsed?.jobDescription || parsedData.jobDescription || '';
+          const resumeText = parsedData.resumeText || '';
+
+          if (jdText.trim() && resumeText.trim()) {
+            try {
+              const match = await Resume.matchScore(resumeText, jdText, parsedData);
+              analysisResults.resumeMatch = match;
+            } catch (e) {
+              console.warn('Resume match failed:', e);
+            }
+          }
+
+          updateStatus(statusMessages[4], 100);
+          await new Promise(resolve => setTimeout(resolve, 400));
+
+          // Save results and navigate
+          setTimeout(() => {
+            Navigation.goToResults(analysisResults);
+          }, 500);
+        } catch (error) {
+          console.error('Analysis error:', error);
+          
+          // Show user-friendly error message
+          const statusEl = document.getElementById('status-text');
+          if (statusEl) {
+            statusEl.innerHTML = `
+              <div class="alert alert-error">
+                <p class="fs-lg mb-1">❌ Analysis Failed</p>
+                <p>${error.message || 'An error occurred during analysis.'}</p>
+                <p class="mt-1">Please check that:</p>
+                <ul style="text-align: left; margin-top: 0.5rem;">
+                  <li>You provided complete internship information</li>
+                  <li>The backend server is running (port 5000)</li>
+                  <li>All fields contain meaningful data</li>
+                </ul>
+                <button onclick="window.location.href='check.html'" class="btn btn-primary mt-2">
+                  Try Again
+                </button>
+              </div>
+            `;
+          }
+        }
+      })();
+    });
+  </script>
+</body>
+</html>

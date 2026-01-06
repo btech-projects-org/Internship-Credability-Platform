@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Internship Credibility Project Overview</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 24px; color: #222; }
+    h1, h2, h3 { color: #0b3b6a; }
+    code { background: #f5f5f5; padding: 2px 4px; }
+    ul { margin-top: 0; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; background: #eef4ff; border: 1px solid #ccd9ff; margin-right: 6px; }
+    .section { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Internship Credibility Platform — Project Overview</h1>
+  <p>This document summarizes the codebase structure, file responsibilities, end-to-end workflow, and environment requirements to run the project. You can print this page to PDF from your browser.</p>
+
+  <div class="section">
+    <h2>High-Level Architecture</h2>
+    <ul>
+      <li><strong>Frontend</strong>: Static HTML/CSS/JS (no framework) in <code>frontend/</code>. Uses fetch to call backend APIs.</li>
+      <li><strong>Backend</strong>: Flask (Python 3.12) in <code>backend/</code>. Provides parsing, credibility scoring, URL features, company verification, and new company website search.</li>
+      <li><strong>Models</strong>: Random Forest and text/sentiment utilities under <code>backend/models</code> and <code>backend/preprocessing</code>.</li>
+      <li><strong>Services</strong>: Business logic (parsing, verification, scoring) under <code>backend/services</code>.</li>
+      <li><strong>Documentation</strong>: Supplemental docs in <code>documentation/</code>.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Key Backend Files & Responsibilities</h2>
+    <ul>
+      <li><strong>backend/app.py</strong>: Flask app entrypoint; registers blueprints.</li>
+      <li><strong>backend/routes/credibility_routes.py</strong>: API routes (<code>/predict</code>, <code>/parse_internship_info</code>, <code>/find_company_website</code>, <code>/verify_company</code>, <code>/extract_url_features</code>).</li>
+      <li><strong>backend/routes/credibility_routes/__init__.py</strong>: Package marker.</li>
+      <li><strong>backend/services/credibility_engine.py</strong>: Core scoring logic, validation, red flags.</li>
+      <li><strong>backend/services/info_parser.py</strong>: Extracts company, position, salary, duration, email, description.</li>
+      <li><strong>backend/services/company_search.py</strong>: Google CSE lookup for official website.</li>
+      <li><strong>backend/services/company_verifier.py</strong>: Heuristic verification (warnings/positives).</li>
+      <li><strong>backend/services/url_feature_extractor.py</strong>: URL heuristics (age/patterns/flags).</li>
+      <li><strong>backend/services/sentiment_analyzer.py</strong>: Sentiment model wrapper.</li>
+      <li><strong>backend/services/credibility_engine.py</strong>: (Listed above) the main orchestrator.</li>
+      <li><strong>backend/services/info_parser/__init__.py</strong>: Package marker (if present).</li>
+      <li><strong>backend/preprocessing/feature_scaler.py</strong>: Numeric feature scaling helpers.</li>
+      <li><strong>backend/preprocessing/text_cleaner.py</strong>: Normalize/clean text.</li>
+      <li><strong>backend/preprocessing/tokenizer.py</strong>: Tokenization utilities.</li>
+      <li><strong>backend/preprocessing/__init__.py</strong>: Package marker.</li>
+      <li><strong>backend/models/random_forest_inference.py</strong>: RandomForest loading/inference.</li>
+      <li><strong>backend/models/text_cnn_inference.py</strong>: Text CNN inference helper.</li>
+      <li><strong>backend/models/__init__.py</strong>: Package marker.</li>
+      <li><strong>backend/scripts/</strong>: Misc scripts (empty or utilities as added).</li>
+      <li><strong>backend/config/secrets.env</strong>: Environment variables (not checked in; local use).</li>
+      <li><strong>backend/api/index.py</strong>: Optional API entry (if used by deployment).</li>
+      <li><strong>bitcoin_analysis_summary.py</strong>: Example script to run analysis on a sample posting.</li>
+      <li><strong>pyrightconfig.json</strong>: Type checker configuration.</li>
+      <li><strong>backend/requirements.txt</strong>: Python dependencies.</li>
+      <li><strong>tests/quality_assurance_suite.py</strong>: Unit tests for services.</li>
+      <li><strong>tests/integration_test_suite.py</strong>: End-to-end workflow tests.</li>
+      <li><strong>tests/run_all_quality_tests.py</strong>: Test runner.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Key Frontend Files & Responsibilities</h2>
+    <ul>
+      <li><strong>frontend/pages/index.html</strong>: Landing page.</li>
+      <li><strong>frontend/pages/check.html</strong>: Input form for internship details and resume.</li>
+      <li><strong>frontend/pages/analysis.html</strong>: Shows progress; calls parse/predict APIs.</li>
+      <li><strong>frontend/pages/result.html</strong>: Displays scores, breakdown, recommendations.</li>
+      <li><strong>frontend/pages/about.html, contact.html, workflow.html, resume-templates.html</strong>: Static content pages.</li>
+      <li><strong>frontend/css/base/layout.css</strong>: Layout utilities.</li>
+      <li><strong>frontend/css/base/style.css</strong>: Global styles.</li>
+      <li><strong>frontend/css/components/components.css</strong>: Reusable UI components.</li>
+      <li><strong>frontend/css/animations/animations.css</strong>: Animations.</li>
+      <li><strong>frontend/css/main.css</strong>: Aggregated stylesheet.</li>
+      <li><strong>frontend/js/config/config.js</strong>: API base URL and config.</li>
+      <li><strong>frontend/js/core/navigation.js</strong>: Page navigation helpers.</li>
+      <li><strong>frontend/js/core/storage.js</strong>: Local storage helpers.</li>
+      <li><strong>frontend/js/core/ui.js</strong>: UI helpers.
+      </li>
+      <li><strong>frontend/js/core/validation.js</strong>: Form validation utilities.</li>
+      <li><strong>frontend/js/utils/button-state.js</strong>: Button state management.</li>
+      <li><strong>frontend/js/analysis/analysis.js</strong>: Orchestrates parse/predict flow.</li>
+      <li><strong>frontend/js/analysis/result.js</strong>: Maps analysis results to result page UI.</li>
+      <li><strong>frontend/js/analysis/resume.js</strong>: Resume vs JD matching.</li>
+      <li><strong>frontend/js/analysis/analysis.js</strong>: (Listed) main analysis workflow.</li>
+      <li><strong>frontend/js/utils/button-state.js</strong>: (Listed) button helpers.</li>
+      <li><strong>frontend/assets/assets/video/background.mp4</strong>: Background video.</li>
+      <li><strong>frontend/scripts/serve_frontend.py</strong>: Simple server helper (if used).</li>
+      <li><strong>frontend/scripts/path_validator.py</strong>, <strong>api_contract_check.py</strong>, <strong>update_paths.ps1</strong>: Maintenance scripts.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>API Workflow (Backend)</h2>
+    <ol>
+      <li><strong>Parse</strong> (<code>POST /api/parse_internship_info</code>): If raw text is provided, the backend extracts structured fields (company, position, salary, duration, email, job description).</li>
+      <li><strong>Predict</strong> (<code>POST /api/predict</code>): Uses credibility_engine to score: company verification, URL features, email-domain match, sentiment, data completeness, and red flags.</li>
+      <li><strong>Optional</strong>: <code>/api/find_company_website</code> can infer the official URL from company name via Google CSE (requires API key).</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>Scoring Summary</h2>
+    <ul>
+      <li><strong>Company verification score</strong>: From company_verifier (0–1).</li>
+      <li><strong>URL score</strong>: From url_feature_extractor if website is provided.</li>
+      <li><strong>Email match score</strong>: Domain match between email and website.</li>
+      <li><strong>Sentiment/description score</strong>: Sentiment of job description.</li>
+      <li><strong>Verification score</strong>: Data completeness (company, position, salary, duration or LinkedIn/Glassdoor/isRegistered flags).</li>
+      <li><strong>Red flags</strong>: Each adds penalty; capped.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Running the Project (Backend)</h2>
+    <ol>
+      <li>Install Python 3.12.</li>
+      <li><code>cd backend</code></li>
+      <li>Create/activate a venv (recommended): <code>python -m venv .venv &amp; .venv\Scripts\activate</code></li>
+      <li>Install deps: <code>pip install -r requirements.txt</code></li>
+      <li>Set env vars (examples):
+        <ul>
+          <li><code>GOOGLE_CSE_API_KEY=&lt;your-key&gt;</code></li>
+          <li><code>GOOGLE_CSE_CX=&lt;your-cse-id&gt;</code></li>
+        </ul>
+      </li>
+      <li>Run: <code>python app.py</code> (serves on http://127.0.0.1:5000)</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>Running the Frontend</h2>
+    <ol>
+      <li>Serve the <code>frontend/</code> folder with a static server (e.g., VS Code Live Server) or open <code>frontend/pages/index.html</code> directly.</li>
+      <li>Ensure <code>CONFIG.API_BASE_URL</code> in <code>frontend/js/config/config.js</code> points to the backend (default http://127.0.0.1:5000/api).</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>Notable Requirements & Integrations</h2>
+    <ul>
+      <li><strong>Python deps</strong>: Flask 3.x, flask-cors, transformers (for sentiment), scikit-learn, requests, etc. (see <code>backend/requirements.txt</code>).</li>
+      <li><strong>External keys (optional but useful)</strong>:
+        <ul>
+          <li><code>GOOGLE_CSE_API_KEY</code> and <code>GOOGLE_CSE_CX</code> for company URL discovery.</li>
+          <li>Google Places API key (not yet wired) would be needed for Google Reviews integration.</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Data Flow (Frontend → Backend)</h2>
+    <ol>
+      <li>User pastes internship info in <code>check.html</code>.</li>
+      <li>Data stored via <code>Storage</code>, then sent to <code>analysis.html</code>.</li>
+      <li>analysis.js optionally calls <code>/parse_internship_info</code> if raw text is provided.</li>
+      <li>analysis.js calls <code>/predict</code> with structured fields (and parsed data if available).</li>
+      <li>Results are passed to <code>result.html</code> for display.</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>How to Export This Page to PDF</h2>
+    <ol>
+      <li>Open this file in your browser: <code>documentation/project_overview.html</code>.</li>
+      <li>Use the browser Print dialog → “Save as PDF”.</li>
+      <li>Save in the project folder.</li>
+    </ol>
+  </div>
+</body>
+</html>
